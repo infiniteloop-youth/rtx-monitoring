@@ -1,0 +1,56 @@
+version: '2'
+
+services:
+    python:
+        build: ./monitoring-py
+        container_name: rtx1200-python
+        environment:
+            - ROUTER_IP_ADDRESS=192.168.100.1
+            - ROUTER_LOGIN_USER=monitor
+            - ROUTER_LOGIN_PASSWORD=hogepiyo
+            - ROUTER_PROMPT=
+            - INFLUX_DB_NAME=rtx1200-ssh
+            - INFLUX_DB_ADDRESS=rtx1200-influxdb
+            - INFLUX_DB_PORT=8086
+            - INFLUX_DB_USER=admin
+            - INFLUX_DB_PASSWORD=hogepiyo
+            - MONITORING_INTERVAL=15
+            - BANDWIDTH_SAMPLING_INTERVAL=1
+        restart: always
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: rtx1200-grafana
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=hogepiyo
+        volumes:
+            - grafana-volume:/var/lib/grafana
+        links:
+            - influxdb:influxdb
+        depends_on:
+            - influxdb
+        privileged: true
+        restart: always
+
+    influxdb:
+        image: influxdb:alpine
+        container_name: rtx1200-influxdb
+        ports:
+            - "8086:8086"
+            - "8083:8083"
+        volumes:
+            - influxdb-volume:/var/lib/influxdb
+        environment:
+            - INFLUXDB_ADMIN_ENABLED=true
+            - INFLUXDB_ADMIN_USER=admin
+            - INFLUXDB_ADMIN_PASSWORD=hogepiyo
+            - INFLUXDB_DB=rtx1200-ssh
+        privileged: true
+        restart: always
+volumes:
+    influxdb-volume:
+        driver: local
+    grafana-volume:
+        driver: local
